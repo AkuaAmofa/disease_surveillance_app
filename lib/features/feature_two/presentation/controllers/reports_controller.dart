@@ -56,11 +56,27 @@ class ReportFormState {
   final DateTime? date;
   final TimeOfDay? time;
   final int caseCount;
-  final String sex;
-  final String ageGroup;
   final String severity;
   final String reportSource;
   final String notes;
+
+  // IDSR fields
+  final String caseClassification;
+  final int deathCount;
+  final String reportType;
+  final String healthFacility;
+
+  // Sex breakdown counts
+  final int maleCount;
+  final int femaleCount;
+  final int unknownSexCount;
+
+  // Age breakdown counts
+  final int ageUnder5Count;
+  final int age5To17Count;
+  final int age18To59Count;
+  final int age60PlusCount;
+  final int unknownAgeCount;
 
   final bool isLoadingData;
   final bool isSubmitting;
@@ -77,17 +93,30 @@ class ReportFormState {
 
   bool get isEditMode => editingReportId != null;
 
+  int get sexTotal => maleCount + femaleCount + unknownSexCount;
+  int get ageTotal => ageUnder5Count + age5To17Count + age18To59Count + age60PlusCount + unknownAgeCount;
+
   const ReportFormState({
     this.selectedDisease,
     this.selectedLocation,
     this.date,
     this.time,
     this.caseCount = 1,
-    this.sex = 'Unknown',
-    this.ageGroup = 'Unknown',
     this.severity = 'Unknown',
     this.reportSource = 'Facility',
     this.notes = '',
+    this.caseClassification = 'Unknown',
+    this.deathCount = 0,
+    this.reportType = 'Weekly',
+    this.healthFacility = '',
+    this.maleCount = 0,
+    this.femaleCount = 0,
+    this.unknownSexCount = 0,
+    this.ageUnder5Count = 0,
+    this.age5To17Count = 0,
+    this.age18To59Count = 0,
+    this.age60PlusCount = 0,
+    this.unknownAgeCount = 0,
     this.isLoadingData = false,
     this.isSubmitting = false,
     this.errorMessage,
@@ -107,11 +136,21 @@ class ReportFormState {
     DateTime? date,
     TimeOfDay? time,
     int? caseCount,
-    String? sex,
-    String? ageGroup,
     String? severity,
     String? reportSource,
     String? notes,
+    String? caseClassification,
+    int? deathCount,
+    String? reportType,
+    String? healthFacility,
+    int? maleCount,
+    int? femaleCount,
+    int? unknownSexCount,
+    int? ageUnder5Count,
+    int? age5To17Count,
+    int? age18To59Count,
+    int? age60PlusCount,
+    int? unknownAgeCount,
     bool? isLoadingData,
     bool? isSubmitting,
     String? errorMessage,
@@ -130,11 +169,21 @@ class ReportFormState {
       date: date ?? this.date,
       time: time ?? this.time,
       caseCount: caseCount ?? this.caseCount,
-      sex: sex ?? this.sex,
-      ageGroup: ageGroup ?? this.ageGroup,
       severity: severity ?? this.severity,
       reportSource: reportSource ?? this.reportSource,
       notes: notes ?? this.notes,
+      caseClassification: caseClassification ?? this.caseClassification,
+      deathCount: deathCount ?? this.deathCount,
+      reportType: reportType ?? this.reportType,
+      healthFacility: healthFacility ?? this.healthFacility,
+      maleCount: maleCount ?? this.maleCount,
+      femaleCount: femaleCount ?? this.femaleCount,
+      unknownSexCount: unknownSexCount ?? this.unknownSexCount,
+      ageUnder5Count: ageUnder5Count ?? this.ageUnder5Count,
+      age5To17Count: age5To17Count ?? this.age5To17Count,
+      age18To59Count: age18To59Count ?? this.age18To59Count,
+      age60PlusCount: age60PlusCount ?? this.age60PlusCount,
+      unknownAgeCount: unknownAgeCount ?? this.unknownAgeCount,
       isLoadingData: isLoadingData ?? this.isLoadingData,
       isSubmitting: isSubmitting ?? this.isSubmitting,
       errorMessage: errorMessage,
@@ -271,11 +320,21 @@ class ReportFormController extends StateNotifier<ReportFormState> {
         date: date,
         time: time,
         caseCount: report.caseCount,
-        sex: AppConstants.sexDisplayLabels[report.sex] ?? 'Unknown',
-        ageGroup: AppConstants.ageGroupDisplayLabels[report.ageGroup] ?? 'Unknown',
         severity: AppConstants.severityDisplayLabels[report.severityLevel] ?? 'Unknown',
         reportSource: AppConstants.reportSourceDisplayLabels[report.reportSource] ?? 'Facility',
         notes: report.caseNotes ?? '',
+        caseClassification: AppConstants.caseClassificationDisplayLabels[report.caseClassification] ?? 'Unknown',
+        deathCount: report.deathCount,
+        reportType: AppConstants.reportTypeDisplayLabels[report.reportType] ?? 'Weekly',
+        healthFacility: report.healthFacility ?? '',
+        maleCount: report.maleCount,
+        femaleCount: report.femaleCount,
+        unknownSexCount: report.unknownSexCount,
+        ageUnder5Count: report.ageUnder5Count,
+        age5To17Count: report.age5To17Count,
+        age18To59Count: report.age18To59Count,
+        age60PlusCount: report.age60PlusCount,
+        unknownAgeCount: report.unknownAgeCount,
       );
     } catch (e) {
       debugPrint('_loadExistingReport error: $e');
@@ -291,17 +350,38 @@ class ReportFormController extends StateNotifier<ReportFormState> {
   void setDate(DateTime v) => state = state.copyWith(date: v);
   void setTime(TimeOfDay v) => state = state.copyWith(time: v);
   void setCaseCount(int v) => state = state.copyWith(caseCount: v < 1 ? 1 : v);
-  void setSex(String v) => state = state.copyWith(sex: v);
-  void setAgeGroup(String v) => state = state.copyWith(ageGroup: v);
   void setSeverity(String v) => state = state.copyWith(severity: v);
   void setSource(String v) => state = state.copyWith(reportSource: v);
   void setNotes(String v) => state = state.copyWith(notes: v);
+  void setCaseClassification(String v) => state = state.copyWith(caseClassification: v);
+  void setDeathCount(int v) => state = state.copyWith(deathCount: v < 0 ? 0 : v);
+  void setReportType(String v) => state = state.copyWith(reportType: v);
+  void setHealthFacility(String v) => state = state.copyWith(healthFacility: v);
+  void setMaleCount(int v) => state = state.copyWith(maleCount: v < 0 ? 0 : v);
+  void setFemaleCount(int v) => state = state.copyWith(femaleCount: v < 0 ? 0 : v);
+  void setUnknownSexCount(int v) => state = state.copyWith(unknownSexCount: v < 0 ? 0 : v);
+  void setAgeUnder5Count(int v) => state = state.copyWith(ageUnder5Count: v < 0 ? 0 : v);
+  void setAge5To17Count(int v) => state = state.copyWith(age5To17Count: v < 0 ? 0 : v);
+  void setAge18To59Count(int v) => state = state.copyWith(age18To59Count: v < 0 ? 0 : v);
+  void setAge60PlusCount(int v) => state = state.copyWith(age60PlusCount: v < 0 ? 0 : v);
+  void setUnknownAgeCount(int v) => state = state.copyWith(unknownAgeCount: v < 0 ? 0 : v);
 
   String? validate() {
     if (state.selectedDisease == null) return 'Please select a disease.';
     if (state.selectedLocation == null) return 'Please select a location.';
     if (state.date == null) return 'Please select a date.';
     if (state.caseCount < 1) return 'Case count must be at least 1.';
+    if (state.deathCount > state.caseCount) {
+      return 'Deaths (${state.deathCount}) cannot exceed case count (${state.caseCount}).';
+    }
+    final sexTotal = state.sexTotal;
+    if (sexTotal > 0 && sexTotal != state.caseCount) {
+      return 'Sex breakdown total ($sexTotal) must equal case count (${state.caseCount}).';
+    }
+    final ageTotal = state.ageTotal;
+    if (ageTotal > 0 && ageTotal != state.caseCount) {
+      return 'Age breakdown total ($ageTotal) must equal case count (${state.caseCount}).';
+    }
     return null;
   }
 
@@ -360,32 +440,45 @@ class ReportFormController extends StateNotifier<ReportFormState> {
         ? observedAtStr.substring(0, 19)
         : observedAtStr;
 
-    final sexValue = AppConstants.sexApiValues[state.sex] ?? 'UNKNOWN';
-    final ageValue = AppConstants.ageGroupApiValues[state.ageGroup] ?? 'UNKNOWN';
     final severityValue = AppConstants.severityApiValues[state.severity] ?? 'UNKNOWN';
     final sourceValue = AppConstants.reportSourceApiValues[state.reportSource] ?? state.reportSource;
     final notesValue = state.notes.isEmpty ? null : state.notes;
+    final classificationValue = AppConstants.caseClassificationApiValues[state.caseClassification] ?? 'UNKNOWN';
+    final reportTypeValue = AppConstants.reportTypeApiValues[state.reportType] ?? 'WEEKLY';
+    final healthFacilityValue = state.healthFacility.trim();
 
     state = state.copyWith(isSubmitting: true, errorMessage: null);
 
     try {
+      final payload = <String, dynamic>{
+        'disease': diseaseId,
+        'location': locationId,
+        'reported_by': state.currentUserId,
+        'status': statusId,
+        'observed_at': observedAtFormatted,
+        'case_count': state.caseCount,
+        'death_count': state.deathCount,
+        'case_classification': classificationValue,
+        'report_type': reportTypeValue,
+        'male_count': state.maleCount,
+        'female_count': state.femaleCount,
+        'unknown_sex_count': state.unknownSexCount,
+        'age_under5_count': state.ageUnder5Count,
+        'age_5_17_count': state.age5To17Count,
+        'age_18_59_count': state.age18To59Count,
+        'age_60plus_count': state.age60PlusCount,
+        'unknown_age_count': state.unknownAgeCount,
+        'severity_level': severityValue,
+        'report_source': sourceValue,
+        if (healthFacilityValue.isNotEmpty) 'health_facility': healthFacilityValue,
+        'case_notes': notesValue,
+      };
+
       if (state.editingReportId != null) {
-        final payload = <String, dynamic>{
-          'disease': diseaseId,
-          'location': locationId,
-          'reported_by': state.currentUserId,
-          'status': statusId,
-          'observed_at': observedAtFormatted,
-          'case_count': state.caseCount,
-          'sex': sexValue,
-          'age_group': ageValue,
-          'severity_level': severityValue,
-          'report_source': sourceValue,
-          if (notesValue != null) 'case_notes': notesValue,
-        };
         debugPrint('Report update payload (id=${state.editingReportId}): $payload');
         await _reportsRepo.updateReport(state.editingReportId!, payload);
       } else {
+        debugPrint('Report create payload: $payload');
         final report = ReportModel(
           disease: diseaseId,
           location: locationId,
@@ -393,8 +486,18 @@ class ReportFormController extends StateNotifier<ReportFormState> {
           status: statusId,
           observedAt: observedAtFormatted,
           caseCount: state.caseCount,
-          sex: sexValue,
-          ageGroup: ageValue,
+          deathCount: state.deathCount,
+          caseClassification: classificationValue,
+          reportType: reportTypeValue,
+          healthFacility: healthFacilityValue.isNotEmpty ? healthFacilityValue : null,
+          maleCount: state.maleCount,
+          femaleCount: state.femaleCount,
+          unknownSexCount: state.unknownSexCount,
+          ageUnder5Count: state.ageUnder5Count,
+          age5To17Count: state.age5To17Count,
+          age18To59Count: state.age18To59Count,
+          age60PlusCount: state.age60PlusCount,
+          unknownAgeCount: state.unknownAgeCount,
           severityLevel: severityValue,
           reportSource: sourceValue,
           caseNotes: notesValue,

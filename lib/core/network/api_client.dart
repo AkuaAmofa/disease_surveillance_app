@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
@@ -25,12 +26,14 @@ class ApiClient {
         dio = Dio(
           BaseOptions(
             baseUrl: baseUrl,
-            connectTimeout: const Duration(seconds: 15),
-            receiveTimeout: const Duration(seconds: 15),
+            connectTimeout: const Duration(seconds: 60),
+            receiveTimeout: const Duration(seconds: 60),
+            sendTimeout: const Duration(seconds: 60),
             headers: {'Content-Type': 'application/json'},
           ),
         ) {
     dio.interceptors.add(_authInterceptor());
+    dio.interceptors.add(_coldStartRetryInterceptor());
   }
 
   InterceptorsWrapper _authInterceptor() {
@@ -43,6 +46,40 @@ class ApiClient {
         handler.next(options);
       },
       onError: (error, handler) {
+        handler.next(error);
+      },
+    );
+  }
+
+  /// Automatically retries safe (GET) requests once when they fail due to
+  /// timeout or connection errors — the most common symptom of a Render
+  /// free-tier cold start.
+  InterceptorsWrapper _coldStartRetryInterceptor() {
+    return InterceptorsWrapper(
+      onError: (error, handler) async {
+        final isRetryable =
+            error.type == DioExceptionType.connectionTimeout ||
+            error.type == DioExceptionType.receiveTimeout ||
+            error.type == DioExceptionType.sendTimeout ||
+            error.type == DioExceptionType.connectionError;
+
+        final isSafeMethod = error.requestOptions.method == 'GET';
+        final alreadyRetried = error.requestOptions.extra['_retried'] == true;
+
+        if (isRetryable && isSafeMethod && !alreadyRetried) {
+          debugPrint(
+            'Cold-start retry: ${error.requestOptions.method} '
+            '${error.requestOptions.path}',
+          );
+          await Future.delayed(const Duration(seconds: 3));
+          error.requestOptions.extra['_retried'] = true;
+          try {
+            final response = await dio.fetch(error.requestOptions);
+            return handler.resolve(response);
+          } on DioException {
+            // Retry failed — fall through to the original error.
+          }
+        }
         handler.next(error);
       },
     );

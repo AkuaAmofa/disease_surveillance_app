@@ -23,14 +23,39 @@ class ReportCaseScreen extends ConsumerStatefulWidget {
 
 class _ReportCaseScreenState extends ConsumerState<ReportCaseScreen> {
   final _caseCountController = TextEditingController(text: '1');
+  final _deathCountController = TextEditingController(text: '0');
   final _notesController = TextEditingController();
+  final _healthFacilityController = TextEditingController();
+
+  // Sex breakdown
+  final _maleCountController = TextEditingController(text: '0');
+  final _femaleCountController = TextEditingController(text: '0');
+  final _unknownSexCountController = TextEditingController(text: '0');
+
+  // Age breakdown
+  final _ageUnder5Controller = TextEditingController(text: '0');
+  final _age5To17Controller = TextEditingController(text: '0');
+  final _age18To59Controller = TextEditingController(text: '0');
+  final _age60PlusController = TextEditingController(text: '0');
+  final _unknownAgeController = TextEditingController(text: '0');
+
   int _formVersion = 0;
   bool _didPrefill = false;
 
   @override
   void dispose() {
     _caseCountController.dispose();
+    _deathCountController.dispose();
     _notesController.dispose();
+    _healthFacilityController.dispose();
+    _maleCountController.dispose();
+    _femaleCountController.dispose();
+    _unknownSexCountController.dispose();
+    _ageUnder5Controller.dispose();
+    _age5To17Controller.dispose();
+    _age18To59Controller.dispose();
+    _age60PlusController.dispose();
+    _unknownAgeController.dispose();
     super.dispose();
   }
 
@@ -85,7 +110,17 @@ class _ReportCaseScreenState extends ConsumerState<ReportCaseScreen> {
   void _resetForm() {
     ref.read(reportFormProvider(widget.editReportId).notifier).resetForm();
     _caseCountController.text = '1';
+    _deathCountController.text = '0';
     _notesController.clear();
+    _healthFacilityController.clear();
+    _maleCountController.text = '0';
+    _femaleCountController.text = '0';
+    _unknownSexCountController.text = '0';
+    _ageUnder5Controller.text = '0';
+    _age5To17Controller.text = '0';
+    _age18To59Controller.text = '0';
+    _age60PlusController.text = '0';
+    _unknownAgeController.text = '0';
     _didPrefill = false;
     setState(() => _formVersion++);
   }
@@ -109,7 +144,17 @@ class _ReportCaseScreenState extends ConsumerState<ReportCaseScreen> {
       _didPrefill = true;
       WidgetsBinding.instance.addPostFrameCallback((_) {
         _caseCountController.text = formState.caseCount.toString();
+        _deathCountController.text = formState.deathCount.toString();
         _notesController.text = formState.notes;
+        _healthFacilityController.text = formState.healthFacility;
+        _maleCountController.text = formState.maleCount.toString();
+        _femaleCountController.text = formState.femaleCount.toString();
+        _unknownSexCountController.text = formState.unknownSexCount.toString();
+        _ageUnder5Controller.text = formState.ageUnder5Count.toString();
+        _age5To17Controller.text = formState.age5To17Count.toString();
+        _age18To59Controller.text = formState.age18To59Count.toString();
+        _age60PlusController.text = formState.age60PlusCount.toString();
+        _unknownAgeController.text = formState.unknownAgeCount.toString();
         setState(() => _formVersion++);
       });
     }
@@ -267,38 +312,122 @@ class _ReportCaseScreenState extends ConsumerState<ReportCaseScreen> {
 
           const SizedBox(height: AppSpacing.s4),
 
-          // ── Section 2: Case Details ─────────────────────────
-          const _SectionHeader(title: 'Case Details'),
+          // ── Section 2: IDSR Classification ──────────────────
+          const _SectionHeader(title: 'IDSR Classification'),
 
-          _InputField(
-            label: 'Case Count *',
-            hint: '1',
-            controller: _caseCountController,
-            keyboardType: TextInputType.number,
-            onChanged: (v) => controller.setCaseCount(int.tryParse(v) ?? 1),
+          _DropdownField(
+            label: 'Case Classification *',
+            value: formState.caseClassification,
+            items: AppConstants.caseClassifications,
+            onChanged: (v) => controller.setCaseClassification(v ?? 'Unknown'),
           ),
 
+          _DropdownField(
+            label: 'Report Type *',
+            value: formState.reportType,
+            items: AppConstants.reportTypes,
+            onChanged: (v) => controller.setReportType(v ?? 'Weekly'),
+            helperText: 'Use Immediate for cholera, VHF, AFP, meningitis — required within 24–48 hours',
+          ),
+
+          const SizedBox(height: AppSpacing.s4),
+
+          // ── Section 3: Case Details ─────────────────────────
+          const _SectionHeader(title: 'Case Details'),
+
           Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Expanded(
-                child: _DropdownField(
-                  label: 'Sex',
-                  value: formState.sex,
-                  items: AppConstants.sexOptions,
-                  onChanged: (v) => controller.setSex(v ?? 'Unknown'),
+                child: _InputField(
+                  label: 'Case Count *',
+                  hint: '1',
+                  controller: _caseCountController,
+                  keyboardType: TextInputType.number,
+                  onChanged: (v) => controller.setCaseCount(int.tryParse(v) ?? 1),
                 ),
               ),
               const SizedBox(width: AppSpacing.s3),
               Expanded(
-                child: _DropdownField(
-                  label: 'Age Group',
-                  value: formState.ageGroup,
-                  items: AppConstants.ageGroups,
-                  onChanged: (v) => controller.setAgeGroup(v ?? 'Unknown'),
+                child: _InputField(
+                  label: 'Deaths',
+                  hint: '0',
+                  controller: _deathCountController,
+                  keyboardType: TextInputType.number,
+                  onChanged: (v) => controller.setDeathCount(int.tryParse(v) ?? 0),
                 ),
               ),
             ],
           ),
+
+          _InputField(
+            label: 'Health Facility',
+            hint: 'e.g. Korle Bu Teaching Hospital',
+            controller: _healthFacilityController,
+            onChanged: controller.setHealthFacility,
+          ),
+
+          // Sex breakdown
+          _BreakdownSection(
+            title: 'Sex Breakdown',
+            total: formState.sexTotal,
+            caseCount: formState.caseCount,
+            children: [
+              _CountField(
+                label: 'Male',
+                controller: _maleCountController,
+                onChanged: (v) => controller.setMaleCount(v),
+              ),
+              _CountField(
+                label: 'Female',
+                controller: _femaleCountController,
+                onChanged: (v) => controller.setFemaleCount(v),
+              ),
+              _CountField(
+                label: 'Unknown',
+                controller: _unknownSexCountController,
+                onChanged: (v) => controller.setUnknownSexCount(v),
+              ),
+            ],
+          ),
+
+          const SizedBox(height: AppSpacing.s4),
+
+          // Age breakdown
+          _BreakdownSection(
+            title: 'Age Breakdown',
+            total: formState.ageTotal,
+            caseCount: formState.caseCount,
+            children: [
+              _CountField(
+                label: 'Under 5',
+                controller: _ageUnder5Controller,
+                onChanged: (v) => controller.setAgeUnder5Count(v),
+              ),
+              _CountField(
+                label: '5–17',
+                controller: _age5To17Controller,
+                onChanged: (v) => controller.setAge5To17Count(v),
+              ),
+              _CountField(
+                label: '18–59',
+                controller: _age18To59Controller,
+                onChanged: (v) => controller.setAge18To59Count(v),
+              ),
+              _CountField(
+                label: '60+',
+                controller: _age60PlusController,
+                onChanged: (v) => controller.setAge60PlusCount(v),
+              ),
+              _CountField(
+                label: 'Unknown',
+                controller: _unknownAgeController,
+                onChanged: (v) => controller.setUnknownAgeCount(v),
+              ),
+            ],
+          ),
+
+          const SizedBox(height: AppSpacing.s4),
 
           Text(
             'Severity',
@@ -321,7 +450,7 @@ class _ReportCaseScreenState extends ConsumerState<ReportCaseScreen> {
 
           const SizedBox(height: AppSpacing.s4),
 
-          // ── Section 3: Additional Notes ─────────────────────
+          // ── Section 4: Additional Notes ─────────────────────
           const _SectionHeader(title: 'Additional Notes'),
 
           _InputField(
@@ -392,6 +521,108 @@ class _ReportCaseScreenState extends ConsumerState<ReportCaseScreen> {
 // Private widgets
 // ═══════════════════════════════════════════════════════════════════
 
+/// Wraps a group of count inputs with a section label and live total indicator.
+class _BreakdownSection extends StatelessWidget {
+  final String title;
+  final int total;
+  final int caseCount;
+  final List<Widget> children;
+
+  const _BreakdownSection({
+    required this.title,
+    required this.total,
+    required this.caseCount,
+    required this.children,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final bool hasEntries = total > 0;
+    final bool isValid = !hasEntries || total == caseCount;
+    final Color totalColor = hasEntries
+        ? (isValid ? AppColors.success : AppColors.danger)
+        : AppColors.textMuted;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Text(
+              title,
+              style: AppTypography.overline.copyWith(color: AppColors.textSecondary),
+            ),
+            const Spacer(),
+            Text(
+              'Total: $total / $caseCount',
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w600,
+                color: totalColor,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: AppSpacing.s2),
+        Row(
+          children: children
+              .map((c) => Expanded(child: Padding(
+                    padding: const EdgeInsets.only(right: AppSpacing.s2),
+                    child: c,
+                  )))
+              .toList(),
+        ),
+      ],
+    );
+  }
+}
+
+/// Compact integer count input with a label above.
+class _CountField extends StatelessWidget {
+  final String label;
+  final TextEditingController controller;
+  final ValueChanged<int> onChanged;
+
+  const _CountField({
+    required this.label,
+    required this.controller,
+    required this.onChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        Text(
+          label,
+          style: const TextStyle(
+            fontSize: 10,
+            fontWeight: FontWeight.w500,
+            color: AppColors.textSecondary,
+          ),
+          textAlign: TextAlign.center,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        ),
+        const SizedBox(height: 4),
+        TextField(
+          controller: controller,
+          keyboardType: TextInputType.number,
+          textAlign: TextAlign.center,
+          style: const TextStyle(fontSize: 14),
+          onChanged: (v) => onChanged(int.tryParse(v) ?? 0),
+          decoration: const InputDecoration(
+            hintText: '0',
+            isDense: true,
+            contentPadding: EdgeInsets.symmetric(horizontal: 6, vertical: 10),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
 class _DraftSubmitHint extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
@@ -453,6 +684,7 @@ class _DropdownField extends StatelessWidget {
   final String? value;
   final List<String> items;
   final String? hint;
+  final String? helperText;
   final ValueChanged<String?> onChanged;
 
   const _DropdownField({
@@ -460,6 +692,7 @@ class _DropdownField extends StatelessWidget {
     this.value,
     required this.items,
     this.hint,
+    this.helperText,
     required this.onChanged,
   });
 
@@ -485,7 +718,10 @@ class _DropdownField extends StatelessWidget {
                 .map((e) => DropdownMenuItem(value: e, child: Text(e)))
                 .toList(),
             onChanged: onChanged,
-            decoration: const InputDecoration(),
+            decoration: InputDecoration(
+              helperText: helperText,
+              helperMaxLines: 2,
+            ),
           ),
         ],
       ),
@@ -562,9 +798,9 @@ class _DatePickerField extends StatelessWidget {
           GestureDetector(
             onTap: onTap,
             child: InputDecorator(
-              decoration: InputDecoration(
+              decoration: const InputDecoration(
                 hintText: 'Select date',
-                suffixIcon: const Icon(Icons.calendar_today_rounded, size: 18),
+                suffixIcon: Icon(Icons.calendar_today_rounded, size: 18),
               ),
               child: display != null ? Text(display) : null,
             ),
@@ -604,9 +840,9 @@ class _TimePickerField extends StatelessWidget {
           GestureDetector(
             onTap: onTap,
             child: InputDecorator(
-              decoration: InputDecoration(
+              decoration: const InputDecoration(
                 hintText: 'HH:MM',
-                suffixIcon: const Icon(Icons.access_time_rounded, size: 18),
+                suffixIcon: Icon(Icons.access_time_rounded, size: 18),
               ),
               child: display != null ? Text(display) : null,
             ),

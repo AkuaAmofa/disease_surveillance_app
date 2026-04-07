@@ -5,10 +5,16 @@ class ApiException implements Exception {
   final int? statusCode;
   final dynamic data;
 
+  /// True when the error is likely caused by a Render free-tier cold start
+  /// (timeout / connection failure). UI can use this to show a friendlier
+  /// "server is waking up" message and offer retry.
+  final bool isColdStart;
+
   const ApiException({
     required this.message,
     this.statusCode,
     this.data,
+    this.isColdStart = false,
   });
 
   factory ApiException.fromDioException(DioException e) {
@@ -16,9 +22,16 @@ class ApiException implements Exception {
       case DioExceptionType.connectionTimeout:
       case DioExceptionType.sendTimeout:
       case DioExceptionType.receiveTimeout:
-        return const ApiException(message: 'Connection timed out. Check your network.');
+        return const ApiException(
+          message: 'Server is waking up. Please wait a moment and try again.',
+          isColdStart: true,
+        );
       case DioExceptionType.connectionError:
-        return const ApiException(message: 'No internet connection.');
+        return const ApiException(
+          message:
+              'Could not reach the server. It may be starting up — please try again in a moment.',
+          isColdStart: true,
+        );
       case DioExceptionType.badResponse:
         final status = e.response?.statusCode;
         final body = e.response?.data;
@@ -29,7 +42,6 @@ class ApiException implements Exception {
           final errors = body['non_field_errors'];
           msg = errors is List ? errors.join(', ') : errors.toString();
         } else if (status == 400 && body is Map) {
-          // DRF validation errors: { "field_name": ["error1", "error2"], ... }
           final parts = <String>[];
           for (final entry in body.entries) {
             final key = entry.key.toString();
@@ -47,6 +59,14 @@ class ApiException implements Exception {
           msg = 'Access denied.';
         } else if (status == 404) {
           msg = 'Resource not found.';
+        } else if (status == 502 || status == 503) {
+          return ApiException(
+            message:
+                'Server is waking up. Please wait a moment and try again.',
+            statusCode: status,
+            data: body,
+            isColdStart: true,
+          );
         } else if (status != null && status >= 500) {
           msg = 'Server error. Try again later.';
         }

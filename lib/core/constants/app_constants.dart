@@ -76,9 +76,48 @@ abstract final class AppConstants {
     'Unknown',
   ];
 
+  static const List<String> caseClassifications = [
+    'Suspected',
+    'Probable',
+    'Confirmed',
+    'Unknown',
+  ];
+
+  static const List<String> reportTypes = [
+    'Weekly',
+    'Immediate',
+    'Outbreak',
+  ];
+
   static const double bottomNavHeight = 80;
 
   /// Maps display labels to Django Report model TextChoices values.
+  static const Map<String, String> caseClassificationApiValues = {
+    'Suspected': 'SUSPECTED',
+    'Probable': 'PROBABLE',
+    'Confirmed': 'CONFIRMED',
+    'Unknown': 'UNKNOWN',
+  };
+
+  static const Map<String, String> reportTypeApiValues = {
+    'Weekly': 'WEEKLY',
+    'Immediate': 'IMMEDIATE',
+    'Outbreak': 'OUTBREAK',
+  };
+
+  static const Map<String, String> caseClassificationDisplayLabels = {
+    'SUSPECTED': 'Suspected',
+    'PROBABLE': 'Probable',
+    'CONFIRMED': 'Confirmed',
+    'UNKNOWN': 'Unknown',
+  };
+
+  static const Map<String, String> reportTypeDisplayLabels = {
+    'WEEKLY': 'Weekly',
+    'IMMEDIATE': 'Immediate',
+    'OUTBREAK': 'Outbreak',
+  };
+
   static const Map<String, String> sexApiValues = {
     'Male': 'MALE',
     'Female': 'FEMALE',
