@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(//c/dev//**)",
+      "Read(//c/Users/amofa/OneDrive/Desktop/disease-surveillance-dashboard/disease_surveillance_dashboard/reporting/**)"
+    ],
+    "additionalDirectories": [
+      "C:\\Users\\amofa\\OneDrive\\Desktop\\disease-surveillance-dashboard\\disease_surveillance_dashboard\\dashboard"
+    ]
+  }
+}
